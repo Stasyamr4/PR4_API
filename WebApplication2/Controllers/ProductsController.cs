@@ -5,100 +5,46 @@ using PR4_API.Models;
 
 namespace WebApplication2.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
         private readonly PR4_APIContext _context;
+        public ProductsController(PR4_APIContext context) => _context = context;
 
-        public ProductsController(PR4_APIContext context)
-        {
-            _context = context;
-        }
         [HttpGet]
-        public async Task<IActionResult> GetProducts(
-            string? search,
-            int? categoryId,
-            decimal? minPrice,
-            decimal? maxPrice)
+        public async Task<IActionResult> GetProducts(string? search, int? categoryId, decimal? minPrice, decimal? maxPrice, bool onlyAvailable = false)
         {
-            var products = _context.Set<Product>().AsNoTracking();
-
-            if (!string.IsNullOrWhiteSpace(search))
+            var query = _context.Set<Product>().AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search)) query = query.Where(p => EF.Functions.Like(p.Name, $"%{search}%"));
+            if (categoryId.HasValue) query = query.Where(p => p.CategoryID == categoryId.Value);
+            if (minPrice.HasValue) query = query.Where(p => p.Price >= minPrice.Value);
+            if (maxPrice.HasValue) query = query.Where(p => p.Price <= maxPrice.Value);
+            if (onlyAvailable) query = query.Where(p => p.Available && p.Count > 0);
+            var result = await query.OrderBy(p => p.Name).Select(p => new
             {
-                products = products.Where(p =>
-                    EF.Functions.Like(p.Name, $"%{search}%"));
-            }
-
-            if (categoryId.HasValue)
-            {
-                products = products.Where(p =>
-                    p.CategoryID == categoryId.Value);
-            }
-
-            if (minPrice.HasValue)
-            {
-                products = products.Where(p =>
-                    p.Price >= minPrice.Value);
-            }
-
-            if (maxPrice.HasValue)
-            {
-                products = products.Where(p =>
-                    p.Price <= maxPrice.Value);
-            }
-
-            var result = await products
-                .OrderBy(p => p.Name)
-                .Select(p => new
-                {
-                    p.ID,
-                    p.Name,
-                    p.Price,
-                    p.Count,
-                    p.CountInProduct,
-                    p.Description,
-                    p.Image,
-                    p.Rating,
-                    p.CategoryID,
-                    p.Available
-                })
-                .ToListAsync();
-
+                p.ID,
+                p.Name,
+                p.Price,
+                p.Count,
+                p.CountInProduct,
+                p.Description,
+                p.Image,
+                p.Rating,
+                p.CategoryID,
+                p.Available
+            }).ToListAsync();
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _context.Set<Product>()
-                .AsNoTracking()
+            var product = await _context.Set<Product>().AsNoTracking()
                 .Where(p => p.ID == id)
-                .Select(p => new
-                {
-                    p.ID,
-                    p.Name,
-                    p.Price,
-                    p.Count,
-                    p.CountInProduct,
-                    p.Description,
-                    p.Image,
-                    p.Rating,
-                    p.CategoryID,
-                    p.Available
-                })
+                .Select(p => new { p.ID, p.Name, p.Price, p.Count, p.CountInProduct, p.Description, p.Image, p.Rating, p.CategoryID, p.Available })
                 .FirstOrDefaultAsync();
-
-            if (product == null)
-            {
-                return NotFound(new
-                {
-                    message = "Товар не найден"
-                });
-            }
-
-            return Ok(product);
+            return product == null ? NotFound(new { message = "Товар не найден" }) : Ok(product);
         }
     }
 }
-
