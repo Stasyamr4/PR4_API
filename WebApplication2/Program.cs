@@ -13,6 +13,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "PR4_API",
+        Version = "v1",
+        Description = "API РјР°СЂРєРµС‚РїР»РµР№СЃР°"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -20,8 +27,9 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Введите JWT-токен в формате: Bearer ваш_токен"
+        Description = "Р’РІРµРґРёС‚Рµ JWT-С‚РѕРєРµРЅ"
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -44,7 +52,7 @@ builder.Services.AddDbContext<PR4_APIContext>(options =>
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Не задан Jwt:Key в appsettings.json");
+    ?? throw new InvalidOperationException("РќРµ Р·Р°РґР°РЅ Jwt:Key РІ appsettings.json");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PR4_API";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PR4_API_Users";
 
@@ -79,4 +87,3 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
-
