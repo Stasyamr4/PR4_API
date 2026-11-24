@@ -1,0 +1,2 @@
+namespace PR4_API.Models;
+public class Product { public int ID { get; set; } public string Name { get; set; } = ""; public decimal Price { get; set; } public int Count { get; set; } public int CountInProduct { get; set; } public string Description { get; set; } = ""; public string Image { get; set; } = ""; public double Rating { get; set; } public int CategoryID { get; set; } public bool Available { get; set; } }
